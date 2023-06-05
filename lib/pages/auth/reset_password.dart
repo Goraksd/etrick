@@ -27,12 +27,12 @@ class _ResetPasswordState extends State<ResetPassword> {
     isEmailError.value = false;
     String email = emailTextFieldController.value.text.trim().toLowerCase();
 
-    if (email.isEmpty || !RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email)) {
+    if (!context.read<AuthService>().isEmailValid(email)) {
       isEmailError.value = true;
       return;
     }
 
-    final result  = await context.read<AuthService>().resetPassword(email);
+    final result = await context.read<AuthService>().resetPassword(email);
     bool success = result.keys.first;
     String e = result.values.first;
     if (!success && mounted) {

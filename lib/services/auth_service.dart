@@ -23,6 +23,22 @@ class AuthService {
     });
   }
 
+  bool isEmailValid(String email) {
+    return RegExp(r'^.+@.+\..+$').hasMatch(email);
+  }
+
+  bool isPasswordValid(String password) {
+    return RegExp(r'^.{8,}$').hasMatch(password);
+  }
+
+  bool isFirstNameValid(String firstName) {
+    return RegExp(r'^.{2,}$').hasMatch(firstName);
+  }
+
+  bool isLastNameValid(String lastName) {
+    return RegExp(r'^.{2,}$').hasMatch(lastName);
+  }
+
   Future<Map<bool, String>> signInWithEmailAndPassword({
     required String email,
     required String password,
@@ -50,8 +66,8 @@ class AuthService {
 
   String getFirebaseAuthErrorMessage(String errorString) {
     String errorCode = errorString
-        .substring(errorString.indexOf("[") + 1, errorString.indexOf("]"))
-        .replaceAll("firebase_auth/", "");
+        .substring(errorString.indexOf("(") + 1, errorString.indexOf(")"))
+        .replaceAll("auth/", "");
     switch (errorCode) {
       case 'invalid-email':
       case 'user-not-found':

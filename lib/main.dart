@@ -1,7 +1,7 @@
 import 'package:etrick/providers/theme_provider.dart';
 import 'package:etrick/services/app_router.dart';
 import 'package:etrick/services/auth_service.dart';
-import 'package:etrick/theme.dart';
+import 'package:etrick/app_theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';

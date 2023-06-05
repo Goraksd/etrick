@@ -1,4 +1,4 @@
-import 'package:etrick/theme.dart';
+import 'package:etrick/app_theme.dart';
 import 'package:flutter/material.dart';
 
 

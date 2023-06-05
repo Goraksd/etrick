@@ -19,26 +19,44 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  bool _obscurePassword = true;
+  final isEmailError = ValueNotifier<bool>(false);
+  final isPasswordError = ValueNotifier<bool>(false);
+  final isFirstNameError = ValueNotifier<bool>(false);
+  final isLastNameError = ValueNotifier<bool>(false);
+  final isPasswordVisible = ValueNotifier<bool>(false);
 
   void _toggleObscurePassword() {
-    setState(() {
-      _obscurePassword = !_obscurePassword;
-    });
+    isPasswordVisible.value = !isPasswordVisible.value;
+  }
+
+  bool validateFields() {
+    isEmailError.value = false;
+    isPasswordError.value = false;
+    isFirstNameError.value = false;
+    isLastNameError.value = false;
+
+    final auth = context.read<AuthService>();
+    if (!auth.isFirstNameValid(firstNameController.text.trim())) {
+      isFirstNameError.value = true;
+      return false;
+    }
+    if (!auth.isLastNameValid(lastNameController.text.trim())) {
+      isLastNameError.value = true;
+      return false;
+    }
+    if (!auth.isEmailValid(emailController.text.trim())) {
+      isEmailError.value = true;
+      return false;
+    }
+    if (!auth.isPasswordValid(passwordController.text)) {
+      isPasswordError.value = true;
+      return false;
+    }
+    return true;
   }
 
   Future<void> _createAccount() async {
-    final String firstName = firstNameController.text.trim();
-    final String lastName = lastNameController.text.trim();
-    final String email = emailController.text.trim();
-    final String password = passwordController.text;
-
-    if (firstName.isEmpty ||
-        lastName.isEmpty ||
-        email.isEmpty ||
-        password.isEmpty ||
-        !RegExp(r'^.+@.+\..+$').hasMatch(email) ||
-        !RegExp(r'^.{8,}$').hasMatch(password)) {
+    if (!validateFields()) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Будь ласка, введіть коректні дані'),
@@ -47,9 +65,12 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       return;
     }
 
-    final authService = context.read<AuthService>();
+    final String firstName = firstNameController.text.trim();
+    final String lastName = lastNameController.text.trim();
+    final String email = emailController.text.trim();
+    final String password = passwordController.text;
 
-    final result = await authService.createAccount(
+    final result = await context.read<AuthService>().createAccount(
       AppUser(
         firstName: firstName,
         lastName: lastName,
@@ -75,73 +96,100 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      appBar: AppBar(
+        title: const Text('Створити обліковий запис'),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Form(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  const SizedBox(height: 16.0),
-                  const LogoWidget(),
-                  const SizedBox(height: 16.0),
-                  TextFormField(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                const SizedBox(height: 16.0),
+                const LogoWidget(),
+                const SizedBox(height: 16.0),
+                ValueListenableBuilder(
+                  valueListenable: isFirstNameError,
+                  builder: (context, value, child) => TextField(
                     controller: firstNameController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
+                      errorText:
+                          value ? 'Будь ласка, введіть правильне ім\'я' : null,
                       labelText: 'Ім\'я',
                       border: OutlineInputBorder(),
                     ),
                   ),
-                  const SizedBox(height: 16.0),
-                  TextFormField(
+                ),
+                const SizedBox(height: 16.0),
+                ValueListenableBuilder(
+                  valueListenable: isLastNameError,
+                  builder: (context, value, child) => TextField(
                     controller: lastNameController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
+                      errorText: value
+                          ? 'Будь ласка, введіть правильне прізвище'
+                          : null,
                       labelText: 'Прізвище',
                       border: OutlineInputBorder(),
                     ),
                   ),
-                  const SizedBox(height: 16.0),
-                  TextFormField(
+                ),
+                const SizedBox(height: 16.0),
+                ValueListenableBuilder(
+                  valueListenable: isEmailError,
+                  builder: (context, value, child) => TextField(
                     controller: emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Електронна пошта',
+                    decoration: InputDecoration(
+                      errorText:
+                          value ? 'Будь ласка, введіть правильний email' : null,
+                      labelText: 'Email',
                       border: OutlineInputBorder(),
                     ),
                   ),
-                  const SizedBox(height: 16.0),
-                  TextFormField(
-                    controller: passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: 'Пароль',
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility
-                              : Icons.visibility_off,
+                ),
+                const SizedBox(height: 16.0),
+                ValueListenableBuilder(
+                  valueListenable: isPasswordError,
+                  builder: (context, passwordError, child) =>
+                      ValueListenableBuilder(
+                    valueListenable: isPasswordVisible,
+                    builder: (context, visible, child) => TextField(
+                      controller: passwordController,
+                      obscureText: !visible,
+                      decoration: InputDecoration(
+                        errorText: passwordError
+                            ? 'Будь ласка, введіть пароль (мін. 8 символів)'
+                            : null,
+                        labelText: 'Пароль',
+                        border: OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          onPressed: _toggleObscurePassword,
+                          icon: Icon(
+                            visible
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
                         ),
-                        onPressed: _toggleObscurePassword,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16.0),
-                  ElevatedButton(
-                    onPressed: _createAccount,
-                    child: const Text('Створити обліковий запис'),
+                ),
+                const SizedBox(height: 16.0),
+                ElevatedButton(
+                  onPressed: _createAccount,
+                  child: const Text('Створити обліковий запис'),
+                ),
+                const SizedBox(height: 16.0),
+                TextButton(
+                  onPressed: () {
+                    context.go(Constants.loginLoc);
+                  },
+                  child: Text(
+                    'Увійти',
                   ),
-                  const SizedBox(height: 16.0),
-                  
-                  TextButton(
-                    onPressed: () {
-                      context.go(Constants.loginLoc);
-                    },
-                    child: Text('Увійти',
-                        style: Theme.of(context).textTheme.labelLarge),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
